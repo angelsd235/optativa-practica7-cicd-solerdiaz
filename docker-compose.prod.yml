@@ -1,0 +1,15 @@
+services:
+  practica7_app:
+    image: solerdiaz/practica7-cicd:debian
+    container_name: practica7_app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "8080:3000"
+    volumes:
+      - practica7_data:/app/data
+
+volumes:
+  practica7_data:
