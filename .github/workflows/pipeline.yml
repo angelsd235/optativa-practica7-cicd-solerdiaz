@@ -1,0 +1,80 @@
+name: Pipeline CI-CD solerdiaz
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      ejecutar_cobertura:
+        description: "Ejecutar informe de cobertura"
+        required: true
+        default: "si"
+        type: choice
+        options:
+          - "si"
+          - "no"
+
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  calidad-y-pruebas:
+    name: Analisis de calidad y pruebas
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar linter
+        run: npm run lint
+
+      - name: Ejecutar pruebas unitarias
+        run: npm test
+
+      - name: Ejecutar cobertura
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.ejecutar_cobertura == 'si' }}
+        run: npm run coverage
+
+  build:
+    name: Construccion del artefacto
+    runs-on: ubuntu-latest
+    needs: calidad-y-pruebas
+
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Construir artefacto
+        run: npm run build
+
+      - name: Publicar artefacto dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: practica7-dist
+          path: dist/
