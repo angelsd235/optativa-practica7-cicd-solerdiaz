@@ -1,0 +1,24 @@
+{
+  "name": "practica7-cicd-solerdiaz",
+  "version": "1.0.0",
+  "description": "Practica 7 CI/CD con GitHub Actions, Docker y despliegue automatico",
+  "main": "src/server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "lint": "eslint src tests",
+    "test": "mocha tests",
+    "coverage": "c8 --reporter=text --reporter=html npm test",
+    "build": "mkdir -p dist && cp -r src package.json package-lock.json dist/"
+  },
+  "keywords": [],
+  "author": "solerdiaz",
+  "license": "ISC",
+  "devDependencies": {
+    "c8": "^9.1.0",
+    "eslint": "^8.57.1",
+    "mocha": "^10.8.2"
+  }
+}
