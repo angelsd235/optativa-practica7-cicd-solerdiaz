@@ -1,0 +1,21 @@
+FROM node:18-alpine
+
+LABEL maintainer="solerdiaz"
+LABEL description="Imagen Alpine para Practica 7 CI/CD"
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY src ./src
+
+VOLUME ["/app/data"]
+
+EXPOSE 3000
+
+CMD ["node", "src/server.js"]
