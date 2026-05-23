@@ -116,3 +116,25 @@ jobs:
           tags: |
             ${{ env.DOCKER_IMAGE }}:alpine
             ${{ env.DOCKER_IMAGE }}:alpine-${{ github.sha }}
+
+  deploy:
+    name: Despliegue continuo en optativa
+    runs-on: [self-hosted, optativa, docker, deploy]
+    needs: docker-images
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Verificar Docker en runner self-hosted
+        run: |
+          docker --version
+          docker compose version
+          docker ps
+
+      - name: Ejecutar despliegue automatico
+        run: ./scripts/deploy.sh
+
+      - name: Ejecutar prueba post-despliegue
+        run: ./scripts/post_deploy_check.sh
