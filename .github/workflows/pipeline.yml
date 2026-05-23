@@ -55,10 +55,28 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.ejecutar_cobertura == 'si' }}
         run: npm run coverage
 
+  security-scan:
+    name: Analisis de seguridad con ClamAV
+    runs-on: ubuntu-latest
+    needs: calidad-y-pruebas
+
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar y actualizar ClamAV
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clamav
+          sudo freshclam || true
+
+      - name: Ejecutar analisis de seguridad
+        run: ./scripts/security_scan.sh
+
   build:
     name: Construccion del artefacto
     runs-on: ubuntu-latest
-    needs: calidad-y-pruebas
+    needs: [calidad-y-pruebas, security-scan]
 
     steps:
       - name: Descargar codigo del repositorio
