@@ -24,6 +24,9 @@ on:
   schedule:
     - cron: "0 7 * * 1"
 
+env:
+  DOCKER_IMAGE: angelsddev/practica7-cicd
+
 jobs:
   calidad-y-pruebas:
     name: Analisis de calidad y pruebas
@@ -78,3 +81,38 @@ jobs:
         with:
           name: practica7-dist
           path: dist/
+
+  docker-images:
+    name: Construir y publicar imagenes Docker
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Login en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Construir y publicar imagen Debian
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile_debian
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:debian
+            ${{ env.DOCKER_IMAGE }}:debian-${{ github.sha }}
+
+      - name: Construir y publicar imagen Alpine
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile_alpine
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:alpine
+            ${{ env.DOCKER_IMAGE }}:alpine-${{ github.sha }}
