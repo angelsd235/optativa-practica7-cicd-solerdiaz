@@ -4,3 +4,12 @@ reports/
 .env
 *.log
 dist/
+
+# Archivos locales sensibles o temporales
+*.odt
+.~lock.*
+*PAT*
+*Contraseña*
+*password*
+*credential*
+*secret*
