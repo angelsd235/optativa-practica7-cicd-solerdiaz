@@ -1,6 +1,6 @@
 services:
   practica7_app:
-    image: solerdiaz/practica7-cicd:debian
+    image: angelsddev/practica7-cicd:debian
     container_name: practica7_app
     restart: unless-stopped
     environment:
