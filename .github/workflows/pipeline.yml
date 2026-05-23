@@ -159,3 +159,79 @@ jobs:
 
       - name: Ejecutar prueba post-despliegue
         run: ./scripts/post_deploy_check.sh
+
+  notify:
+    name: Notificacion por correo
+    runs-on: ubuntu-latest
+    needs: [calidad-y-pruebas, security-scan, build, docker-images, deploy]
+    if: always()
+
+    steps:
+      - name: Enviar correo de resultado del pipeline
+        env:
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          ACTOR_NAME: ${{ github.actor }}
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          import smtplib
+          from email.message import EmailMessage
+
+          needs = json.loads(os.environ["NEEDS_CONTEXT"])
+
+          failed_jobs = [
+              name for name, data in needs.items()
+              if data.get("result") != "success"
+          ]
+
+          if failed_jobs:
+              status = "ERROR"
+              subject = "ERROR - Pipeline CI/CD Practica 7"
+              result_text = "El pipeline ha terminado con errores."
+          else:
+              status = "OK"
+              subject = "OK - Pipeline CI/CD Practica 7"
+              result_text = "El pipeline ha terminado correctamente."
+
+          lines = [
+              "Resultado del pipeline CI/CD - Practica 7",
+              "",
+              f"Estado general: {status}",
+              f"Detalle: {result_text}",
+              "",
+              f"Rama: {os.environ['BRANCH_NAME']}",
+              f"Commit: {os.environ['COMMIT_SHA']}",
+              f"Usuario que lanzó el pipeline: {os.environ['ACTOR_NAME']}",
+              f"URL de ejecución: {os.environ['RUN_URL']}",
+              "",
+              "Resultados por job:"
+          ]
+
+          for name, data in needs.items():
+              lines.append(f"- {name}: {data.get('result')}")
+
+          if failed_jobs:
+              lines.append("")
+              lines.append("Jobs con error o no completados:")
+              for job in failed_jobs:
+                  lines.append(f"- {job}")
+
+          msg = EmailMessage()
+          msg["From"] = os.environ["SMTP_USERNAME"]
+          msg["To"] = os.environ["NOTIFICATION_EMAIL"]
+          msg["Subject"] = subject
+          msg.set_content("\n".join(lines))
+
+          with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+              smtp.login(os.environ["SMTP_USERNAME"], os.environ["SMTP_PASSWORD"])
+              smtp.send_message(msg)
+
+          print("Correo de notificación enviado correctamente")
+          PY
